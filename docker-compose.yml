@@ -1,0 +1,83 @@
+version: "3"
+
+# This file is for local development use only, in the cloud we use a taskdefinition file
+
+# By default docker compose creates a bridge network and adds all the containers to it.
+# mongod is not aware of this network and therefore doesn't bind to that ip. 
+# By default, binds only to 127.0.0.1, which means only connections will be allowed
+# from within the container.
+# So we need to create a static IP for the mongo container and connect to the mongo
+# contaier via that IP.
+services:
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    restart: always
+    volumes:
+      - ./frontend:/app
+      # When building the image, the node modules are included within the image, after we mount
+      # the above volume the node_modules folder is overwritten 
+      # and no more accessible in the container.
+      # So we need to re-add the modules via the below volume,
+      #
+      # Use a data volume to store all the node_modules, 
+      # as data volumes copy in the data from the built docker image before the 'frontend' directory is mounted
+      - /app/node_modules
+    ports:
+      - 3000:3000
+    depends_on:
+      - mongo
+    networks:
+      mongo_net:     
+
+  e2e:
+    image: cypress
+    build: ./e2e
+    container_name: cypress
+    depends_on:
+      - frontend
+    # note: inside e2e container, the network allows accessing
+    # "frontend" host under name "frontend"
+    # so "curl http://frontend" would return whatever the webserver
+    # in the "frontend" container is cooking
+    # see https://docs.docker.com/compose/networking/
+    environment:
+      - CYPRESS_baseUrl=http://frontend:3000
+    command: npx cypress run
+    # mount the host directory e2e/cypress and the file e2e/cypress.json as
+    # volumes within the container
+    # this means that:
+    #  1. anything that Cypress writes to these folders (e.g., screenshots,
+    #     videos) appears also on the Docker host's filesystem
+    #  2. any change that the developer applies to Cypress files on the host
+    #     machine immediately takes effect within the e2e container (no docker
+    #     rebuild required).
+    volumes:
+      - ./e2e/cypress:/app/cypress
+      - ./e2e/cypress.json:/app/cypress.json    
+    networks:
+      mongo_net:      
+
+  mongo:
+    image: mongo
+    container_name: mongo
+    ports:
+    - 27017:27017
+    volumes:
+      - C:/Users/User/Desktop/NextJsMongoTemplate/datastore/mongodata:/data/db
+    # Assign all containers to a custom mongo_net network.
+    # Create a static IP for the mongo container.
+    # We can then connect to mongo via that IP
+    # Don't actually use this IP anymore, using the container name
+    networks:
+      mongo_net:
+        ipv4_address: 172.16.0.1
+    command: mongod --bind_ip 127.0.0.1,172.16.0.1  
+
+networks:
+  mongo_net:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.16.0.0/24
+        gateway: 172.16.0.254
