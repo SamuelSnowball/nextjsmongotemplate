@@ -4,6 +4,7 @@ import {
   ListObjectsV2Command,
   HeadObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 
@@ -40,15 +41,40 @@ export async function getImages(markerId) {
 
   const input = {
     Bucket: BUCKET,
-    //Delimiter: "STRING_VALUE",
-    //EncodingType: "url",
-    Prefix: markerId,
+    Prefix: markerId + "/",
   };
   const command = new ListObjectsV2Command(input);
   const response = await client.send(command);
-  console.log('getImages response: ', response);
 
-  return response?.Contents ?? [];
+  let keys = [];
+  response.Contents?.forEach((result) => {
+    // Awful code
+    // Just dont push the markerId key into the array
+    if(result.Key.length > 5){
+      keys.push(result.Key)
+    }
+  });
+
+  console.log('getImages retrieved the following keys: ', keys);
+
+  const objectData = await getObjects(keys); 
+
+  const imageData = []
+
+  for (const getObjectResponse of objectData) {
+    if(getObjectResponse.$metadata.httpStatusCode === 200){
+      // Get image data
+      // Base64 encode it
+      // https://stackoverflow.com/questions/67366381/aws-s3-v3-javascript-sdk-stream-file-from-bucket-getobjectcommand
+      const imageDataBase64Encoded = await getObjectResponse.Body.transformToString("base64");
+      imageData.push(imageDataBase64Encoded);
+      console.log('Image as base64: ' + imageDataBase64Encoded);
+    }
+  }
+
+  console.log('Returning imageData: ', imageData);
+
+  return imageData ?? [];
 }
 
 /**
@@ -137,7 +163,22 @@ async function createFolderIfNotExist(Bucket, Key) {
 }
 
 async function deleteFolder(Bucket, Key) {
-  const client = new S3Client();
   const command = new DeleteObjectCommand({ Bucket, Key });
   return client.send(command);
+}
+
+async function getObjects(keys) {
+  console.log('getObjects processing keys: ', keys);
+
+  try {
+      let promisesList = [];
+      for (const keyItem of keys) {
+          const command = new GetObjectCommand({ Bucket: BUCKET, Key: keyItem });
+          promisesList.push(client.send(command));
+      }
+      const data = await Promise.all(promisesList);
+      return data;
+  } catch (error) {
+      console.error(error);
+  }
 }
