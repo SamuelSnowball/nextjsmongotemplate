@@ -9,7 +9,7 @@ Could also do this: 'mongodb://172.16.0.1:27017';
 3. Getting Watchpack error on /app /app/pages and /app/styles, permissions issue? server hotreloads but actually only does client, when make server changes need to rebuild the frontend image
 For hot reloading nextjs within docker, two things are required
 4. Ensure docker volume is mapped and for node modules as well
-5. Ammend next.js.config to include, along with the default strict mode:
+5. Ammend next.js.config to include, along with the default strict mode: (When I uppraded to Next13, it complains saying webpackDevMiddleware is not a valid key)
 ```
   webpackDevMiddleware: config => {
     config.watchOptions = {
@@ -21,10 +21,16 @@ For hot reloading nextjs within docker, two things are required
 ```
 6. Hot reloading node modules / package.json changes is flaky
 
+## Work todo
+Rename frontend to app, and in docker-compose
+Add to readme, in the compose file it will create a volume from a hardcoded directory:
+   - C:/Users/User/Desktop/NextJsMongoTemplate/datastore/mongodata:/data/db
+npm i some env package and add a gitignored .env file
+
 ## Contents
 This repo contains 3 containers:
 1. nextjs typescript frontend container exposed on port 3000, api routes exposed on port 3001? to interact with a...
-2. mongo container
+2. mysql container
 3. cypress container
 
 ## Usage
