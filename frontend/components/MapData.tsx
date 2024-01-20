@@ -84,10 +84,7 @@ function MapData(props) {
         marker.latLng.x === e.latLng.lat() && marker.latLng.y === e.latLng.lng()
     );
 
-    // We're passing in imageIds as they exist on the frontend, feels strange but otherwise
-    // we would rely on a previous call to setState and call a function immediatley afterwards
-    // assuming the state would have been updated. setState() myFunc(){ thingThatReliesOnNewState }... bad
-    retrieveImages(foundMarker.imageIds); // Load image data from imageIds
+    retrieveImages(foundMarker.id);
 
     /*
     The join query will return us the trip and marker titles, with the same column name,
@@ -113,7 +110,6 @@ function MapData(props) {
       setMarkerEndDate(dayjs());
     }
 
-    setImageIds(foundMarker.imageIds);
     // Refactor these into a setMarker()
 
     console.log("setting foundMarker.id: ", foundMarker.id);
@@ -187,7 +183,6 @@ function MapData(props) {
       id: markerToUpdate.id,
       title,
       description,
-      imageIds: "",
       markerStartDate: new Date(markerStartDate).toISOString().split("T")[0],
       markerEndDate: new Date(markerEndDate).toISOString().split("T")[0],
     });
@@ -317,7 +312,6 @@ function MapData(props) {
   const [image, setImage] = useState(null);
   const [createObjectURL, setCreateObjectURL] = useState(null);
   // View
-  const [imageIds, setImageIds] = useState(null); // Image ids initially returned by the server
   const [images, setImages] = useState([]); // Image data subsequently returned by the server
 
   const uploadToClient = (event) => {
@@ -330,19 +324,15 @@ function MapData(props) {
   };
 
   /*
-  Option to not use imageIds on the frontend, and just query for a markerId, then the server
-  would lookup all that markers imageIds and retrieve them from S3. But requires an extra database call,
-  instead, usue imageIds on the frontend, pass to the server, so it can go directly to S3.
+  Pass markerID to backend, query S3 for everything in that folder
+
+  Use the foundMarker.id as to not rely on a setState call completeing before calling this function,
+  as that wouldn't work!
   */
-  const retrieveImages = (imageIds) => {
+  const retrieveImages = (foundMarkerId) => {
     // Change endpoint name as weird
     const imageData = axios.get(
-      `http://localhost:3000/api/trip/${tripId}/marker/${markerId}/upload`,
-      {
-        params: {
-          imageIds,
-        },
-      }
+      `http://localhost:3000/api/trip/${tripId}/marker/${foundMarkerId}/upload`
     );
     
     setImages([...images, imageData]);

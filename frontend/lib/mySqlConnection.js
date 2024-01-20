@@ -21,7 +21,6 @@ const MARKER_TABLE_SQL = `create table if not exists marker(
   title varchar(255),
   description varchar(255),
   latLng POINT not null,
-  imageIds varchar(255),
   startDate DATE,
   endDate DATE,
   tripId int,
@@ -32,7 +31,6 @@ const MARKER_TABLE_SQL = `create table if not exists marker(
 const DAY_TABLE_SQL = `create table if not exists day(
   id int primary key auto_increment,
   description varchar(255),
-  imageIds varchar(255),
   date DATE,
   markerId int,
   FOREIGN KEY (markerId) REFERENCES marker(id)

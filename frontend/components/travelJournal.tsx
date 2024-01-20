@@ -77,7 +77,6 @@ function TravelJournal() {
       description: "",
       lat: e.latLng.lat(),
       lng: e.latLng.lng(),
-      imageIds: "",
       tripId,
     });
   };

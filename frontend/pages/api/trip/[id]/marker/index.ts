@@ -21,7 +21,6 @@ export default async function handler(
   marker.title as markerTitle,
   marker.description as markerDescription,
   marker.latLng,
-  marker.imageIds,
   marker.tripId,
   marker.startDate as markerStartDate,
   marker.endDate as markerEndDate,
@@ -31,9 +30,9 @@ export default async function handler(
   trip.endDate from marker inner join trip on marker.tripId=trip.id where trip.id = ?`;
 
   // I have to specify the columns I'm inserting into, even though I'm doing them all, minus the ID which is auto incremented.
-  const POST_MARKER_SQL = `insert into marker(title, description, latLng, imageIds, tripId) values(?, ?, POINT(?, ?), ?, ?)`;
+  const POST_MARKER_SQL = `insert into marker(title, description, latLng, tripId) values(?, ?, POINT(?, ?), ?)`;
 
-  const PUT_MARKER_SQL =  `update marker set title = ?, description = ?, imageIds = ?, startDate = ?, endDate = ? WHERE id = ?`
+  const PUT_MARKER_SQL =  `update marker set title = ?, description = ?, startDate = ?, endDate = ? WHERE id = ?`
 
   switch (method) {
     case "GET":
@@ -59,7 +58,6 @@ export default async function handler(
             req.body.description, 
             req.body.lat,
             req.body.lng,
-            req.body.imageIds,
             req.body.tripId
           ], 
           function (err, results, fields) {

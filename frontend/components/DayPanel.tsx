@@ -26,7 +26,6 @@ function DayPanel(props) {
     putDayMutation.mutate({
         id: selectedDay.id,
         description,
-        //imageIds: "",
     });
   }
 
